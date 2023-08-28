@@ -10,20 +10,25 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _Patient_patientID, _Doctor_doctorID, _Appointment_patient, _Appointment_doctor, _Appointment_date, _Appointment_time, _Hospital_patientsArr, _Hospital_doctorsArr, _Hospital_appointmentsArr, _Hospital_hospitalName;
+var _Patient_patientID, _Doctor_doctorID, _Appointment_patient, _Appointment_doctor, _Appointment_date, _Appointment_time, _Appointment_state, _Hospital_patientsArr, _Hospital_doctorsArr, _Hospital_appointmentsArr, _Hospital_hospitalName;
 // 1)
 class Person {
-    constructor(firstName, lastName) {
+    constructor(firstName, lastName, address, age) {
         this.firstName = firstName;
         this.lastName = lastName;
+        this.address = address;
+        this.age = age;
     }
 }
 // 2)
 class Patient extends Person {
-    constructor(firstName, lastName, patientID) {
-        super(firstName, lastName);
+    constructor(firstName, lastName, address, age, patientID, phoneNumber, emergencyContact, medicalHistory) {
+        super(firstName, lastName, address, age);
         _Patient_patientID.set(this, void 0);
         __classPrivateFieldSet(this, _Patient_patientID, patientID, "f");
+        this.phoneNumber = phoneNumber;
+        this.emergencyContact = emergencyContact;
+        this.medicalHistory = medicalHistory;
     }
     patientInfo() {
         const patientInf = `patient's name: ${this.firstName} ${this.lastName}, patient's ID: ${__classPrivateFieldGet(this, _Patient_patientID, "f")}`;
@@ -33,12 +38,23 @@ class Patient extends Person {
     getID() {
         return __classPrivateFieldGet(this, _Patient_patientID, "f");
     }
+    editMedicHistory(appo) {
+        this.medicalHistory.push(appo);
+    }
 }
 _Patient_patientID = new WeakMap();
+class MedicalStaff extends Patient {
+    constructor(firstName, lastName, address, age, patientID, phoneNumber, emergencyContact, medicalHistory, staffID, position, department) {
+        super(firstName, lastName, address, age, patientID, phoneNumber, emergencyContact, medicalHistory);
+        this.staffID = staffID;
+        this.position = position;
+        this.department = department;
+    }
+}
 // 3)
-class Doctor extends Person {
-    constructor(firstName, lastName, doctorID, specialization) {
-        super(firstName, lastName);
+class Doctor extends MedicalStaff {
+    constructor(firstName, lastName, address, age, patientID, phoneNumber, emergencyContact, medicalHistory, staffID, position, department, doctorID, specialization, availability) {
+        super(firstName, lastName, address, age, patientID, phoneNumber, emergencyContact, medicalHistory, staffID, position, department);
         _Doctor_doctorID.set(this, void 0);
         __classPrivateFieldSet(this, _Doctor_doctorID, doctorID, "f");
         this.specialization = specialization;
@@ -53,17 +69,18 @@ class Doctor extends Person {
     }
 }
 _Doctor_doctorID = new WeakMap();
-// 4)
 class Appointment {
-    constructor(patient, doctor, date, time) {
+    constructor(patient, doctor, date, time, state) {
         _Appointment_patient.set(this, void 0);
         _Appointment_doctor.set(this, void 0);
         _Appointment_date.set(this, void 0);
         _Appointment_time.set(this, void 0);
+        _Appointment_state.set(this, void 0);
         __classPrivateFieldSet(this, _Appointment_patient, patient, "f");
         __classPrivateFieldSet(this, _Appointment_doctor, doctor, "f");
         __classPrivateFieldSet(this, _Appointment_date, date, "f");
         __classPrivateFieldSet(this, _Appointment_time, time, "f");
+        __classPrivateFieldSet(this, _Appointment_state, state, "f");
     }
     appointmentInfo() {
         const appoInfo = `
@@ -74,6 +91,9 @@ class Appointment {
             `;
         console.log(appoInfo);
         return appoInfo;
+    }
+    changeState(newState) {
+        __classPrivateFieldSet(this, _Appointment_state, newState, "f");
     }
     getPatient() {
         return __classPrivateFieldGet(this, _Appointment_patient, "f");
@@ -88,10 +108,18 @@ class Appointment {
         return __classPrivateFieldGet(this, _Appointment_time, "f");
     }
 }
-_Appointment_patient = new WeakMap(), _Appointment_doctor = new WeakMap(), _Appointment_date = new WeakMap(), _Appointment_time = new WeakMap();
+_Appointment_patient = new WeakMap(), _Appointment_doctor = new WeakMap(), _Appointment_date = new WeakMap(), _Appointment_time = new WeakMap(), _Appointment_state = new WeakMap();
+class MedicalRecord {
+    constructor(patient, doctor, diagnosis, prescription) {
+        this.patient = patient;
+        this.doctor = doctor;
+        this.diagnosis = diagnosis;
+        this.prescription = prescription;
+    }
+}
 // 5)
 class Hospital {
-    constructor(patientsArr, doctorsArr, appointmentsArr, hospitalName) {
+    constructor(patientsArr, doctorsArr, appointmentsArr, hospitalName, medicRecordArr) {
         _Hospital_patientsArr.set(this, void 0);
         _Hospital_doctorsArr.set(this, void 0);
         _Hospital_appointmentsArr.set(this, void 0);
@@ -100,6 +128,18 @@ class Hospital {
         __classPrivateFieldSet(this, _Hospital_doctorsArr, doctorsArr, "f");
         __classPrivateFieldSet(this, _Hospital_appointmentsArr, appointmentsArr, "f");
         __classPrivateFieldSet(this, _Hospital_hospitalName, hospitalName, "f");
+        this.medicRecordArr = medicRecordArr;
+    }
+    doctorBySpecial(mySpecialization) {
+        __classPrivateFieldGet(this, _Hospital_doctorsArr, "f").forEach((doctor) => {
+            if (doctor.specialization === mySpecialization)
+                return doctor;
+        });
+        return 'no such specialization';
+    }
+    createMediclRecord(patient, doctor, diagnosis, prescription) {
+        let newReq = new MedicalRecord(patient, doctor, diagnosis, prescription);
+        return newReq;
     }
     addPateint(newPatient) {
         __classPrivateFieldGet(this, _Hospital_patientsArr, "f").push(newPatient);
@@ -135,13 +175,13 @@ class Hospital {
     }
 }
 _Hospital_patientsArr = new WeakMap(), _Hospital_doctorsArr = new WeakMap(), _Hospital_appointmentsArr = new WeakMap(), _Hospital_hospitalName = new WeakMap();
-let jony = new Patient("jony", "balboa", 12345);
-let bilbo = new Patient("bilbo", "bagins", 54321);
-let dolitel = new Doctor("mr.", "dolitel", 56789, "very mumche etc");
-let rofeMadhim = new Doctor("rofew", "madhim", 6544325, "very mumche etc");
-let appo1 = new Appointment(jony, dolitel, "27/08/23", "15:00");
-let appo2 = new Appointment(bilbo, rofeMadhim, "27/08/23", "15:00");
-let barzilay = new Hospital([], [], [], "Barzilay");
-barzilay.addAppointment(appo1);
-barzilay.addAppointment(appo2);
-barzilay.alltheAppoByPatientID(12345);
+// let jony: Patient = new Patient("jony", "balboa", "brechia", 22, 12345, 1547095887, 123456789, []);
+// let bilbo: Patient = new Patient("bilbo", "bagins", "maon bag", 50, 54321);
+// let dolitel: Doctor = new Doctor("mr.", "dolitel", "london", 45, 56789, "very mumche etc");
+// let rofeMadhim: Doctor = new Doctor("rofew", "madhim", "the moon", 579, 6544325, "very mumche etc");
+// let appo1: Appointment = new Appointment(jony, dolitel, "27/08/23", "15:00");
+// let appo2: Appointment = new Appointment(bilbo, rofeMadhim, "27/08/23", "15:00");
+// let barzilay: Hospital = new Hospital([], [], [], "Barzilay");
+// barzilay.addAppointment(appo1);
+// barzilay.addAppointment(appo2);
+// barzilay.alltheAppoByPatientID(12345)
